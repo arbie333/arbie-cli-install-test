@@ -92,8 +92,10 @@ try {
     } | Where-Object { $_ -ieq $NormalizedInstallDir }
 
     if (-not $OnPath) {
-        Write-Host "warning: $InstallDir is not on your PATH. Add it, e.g.:"
-        Write-Host "  [Environment]::SetEnvironmentVariable('Path', `$env:Path + ';$InstallDir', 'User')"
+        $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        [Environment]::SetEnvironmentVariable("Path", "$UserPath;$InstallDir", "User")
+        $env:Path += ";$InstallDir"
+        Write-Host "Added $InstallDir to your PATH (this session and future ones)."
     }
 
     & $DestPath --version
