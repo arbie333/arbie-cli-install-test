@@ -96,6 +96,12 @@ try {
         Write-Host "  [Environment]::SetEnvironmentVariable('Path', `$env:Path + ';$InstallDir', 'User')"
     }
 
+    $SlAlias = Get-Alias -Name sl -ErrorAction SilentlyContinue
+    if ($SlAlias -and $SlAlias.Definition -eq "Set-Location") {
+        Write-Host "warning: 'sl' is PowerShell's built-in alias for Set-Location (cd), so typing 'sl' runs cd, not this CLI. Use 'sl.exe' for now, or override the alias for future sessions with:"
+        Write-Host "  Add-Content `$PROFILE `"Set-Alias -Name sl -Value '$DestPath' -Force`""
+    }
+
     & $DestPath --version
 } finally {
     Remove-Item -Path $TmpDir -Recurse -Force -ErrorAction SilentlyContinue
