@@ -99,7 +99,7 @@ try {
     $SlAlias = Get-Alias -Name sl -ErrorAction SilentlyContinue
     if ($SlAlias -and $SlAlias.Definition -eq "Set-Location") {
         Write-Host "warning: 'sl' is PowerShell's built-in alias for Set-Location (cd), so typing 'sl' runs cd, not this CLI — we won't override that. Use 'sl.exe', or set up your own short alias (e.g. 'slc') for future sessions with:"
-        Write-Host "  Add-Content `$PROFILE `"Set-Alias -Name slc -Value '$DestPath' -Force`""
+        Write-Host "  New-Item -ItemType Directory -Path (Split-Path `$PROFILE) -Force | Out-Null; Add-Content `$PROFILE `"Set-Alias -Name slc -Value '$DestPath' -Force`""
     }
 
     & $DestPath --version
