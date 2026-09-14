@@ -5,21 +5,21 @@
 # PR review, then port them to that repo's install.ps1 by hand; this file
 # does not auto-sync there.
 #
-# Installs the sl CLI (SnapLogic CLI) from the latest (or pinned) release at
+# Installs the snaplogic CLI from the latest (or pinned) release at
 # https://github.com/arbie333/arbie-cli-install-test/releases
 #
 # Usage:
 #   irm https://raw.githubusercontent.com/arbie333/arbie-cli-install-test/main/install.ps1 | iex
 #
 # Env vars:
-#   SL_VERSION      release tag to install, e.g. v1.2.3 (default: latest)
-#   SL_INSTALL_DIR  directory to install the binary into (default: $env:LOCALAPPDATA\sl\bin)
+#   SNAPLOGIC_VERSION      release tag to install, e.g. v1.2.3 (default: latest)
+#   SNAPLOGIC_INSTALL_DIR  directory to install the binary into (default: $env:LOCALAPPDATA\snaplogic\bin)
 
 $ErrorActionPreference = "Stop"
 
 $Repo = "arbie333/arbie-cli-install-test"
 $BaseUrl = "https://github.com/$Repo/releases"
-$Version = if ($env:SL_VERSION) { $env:SL_VERSION } else { "latest" }
+$Version = if ($env:SNAPLOGIC_VERSION) { $env:SNAPLOGIC_VERSION } else { "latest" }
 
 function Fail($Message) {
     Write-Error "error: $Message"
@@ -35,7 +35,7 @@ function Get-Arch {
 }
 
 $Arch = Get-Arch
-$Asset = "sl_windows_${Arch}.zip"
+$Asset = "snaplogic_windows_${Arch}.zip"
 
 if ($Version -eq "latest") {
     $DownloadPath = "latest/download"
@@ -49,7 +49,7 @@ try {
     $AssetPath = Join-Path $TmpDir $Asset
     $ChecksumsPath = Join-Path $TmpDir "checksums.txt"
 
-    Write-Host "Downloading sl (windows/$Arch, $Version)..."
+    Write-Host "Downloading snaplogic (windows/$Arch, $Version)..."
     try {
         Invoke-WebRequest -Uri "$BaseUrl/$DownloadPath/$Asset" -OutFile $AssetPath -UseBasicParsing
     } catch {
@@ -73,18 +73,18 @@ try {
 
     Expand-Archive -Path $AssetPath -DestinationPath $TmpDir -Force
 
-    $ExtractedExe = Join-Path $TmpDir "sl.exe"
+    $ExtractedExe = Join-Path $TmpDir "snaplogic.exe"
     if (-not (Test-Path $ExtractedExe)) {
-        Fail "sl.exe not found in $Asset after extraction — archive layout may have changed. Download and extract manually from $BaseUrl"
+        Fail "snaplogic.exe not found in $Asset after extraction — archive layout may have changed. Download and extract manually from $BaseUrl"
     }
 
-    $InstallDir = if ($env:SL_INSTALL_DIR) { $env:SL_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "sl\bin" }
+    $InstallDir = if ($env:SNAPLOGIC_INSTALL_DIR) { $env:SNAPLOGIC_INSTALL_DIR } else { Join-Path $env:LOCALAPPDATA "snaplogic\bin" }
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 
-    $DestPath = Join-Path $InstallDir "sl.exe"
+    $DestPath = Join-Path $InstallDir "snaplogic.exe"
     Move-Item -Path $ExtractedExe -Destination $DestPath -Force
 
-    Write-Host "Installed sl to $DestPath"
+    Write-Host "Installed snaplogic to $DestPath"
 
     $NormalizedInstallDir = $InstallDir.TrimEnd('\')
     $OnPath = @("User", "Machine") | ForEach-Object {
@@ -94,12 +94,6 @@ try {
     if (-not $OnPath) {
         Write-Host "warning: $InstallDir is not on your PATH. Add it, e.g.:"
         Write-Host "  [Environment]::SetEnvironmentVariable('Path', `$env:Path + ';$InstallDir', 'User')"
-    }
-
-    $SlAlias = Get-Alias -Name sl -ErrorAction SilentlyContinue
-    if ($SlAlias -and $SlAlias.Definition -eq "Set-Location") {
-        Write-Host "warning: 'sl' is PowerShell's built-in alias for Set-Location (cd), so typing 'sl' runs cd, not this CLI — we won't override that. Use 'sl.exe', or set up your own short alias (e.g. 'slc') for future sessions with:"
-        Write-Host "  New-Item -ItemType Directory -Path (Split-Path `$PROFILE) -Force | Out-Null; Add-Content `$PROFILE `"Set-Alias -Name slc -Value '$DestPath' -Force`""
     }
 
     & $DestPath --version
